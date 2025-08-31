@@ -1,0 +1,40 @@
+name: Push to Docker Hub
+
+on:
+  push:
+    branches:
+      - 'main'
+
+jobs:
+  push_to_docker_hub:
+    name: Build and Push Docker Image
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v3
+        with:
+          node-version: '18'
+
+      - name: Install dependencies safely
+        run: npm ci --ignore-scripts        # Правильная практика: npm ci + ignore scripts
+
+      - name: Log in to Docker Hub
+        uses: docker/login-action@v3
+        with:
+          username: ${{ secrets.LOGIN }}       # Секреты безопасно через GitHub Secrets
+          password: ${{ secrets.PASSWORD }}
+
+      - name: Build and push Docker image
+        uses: docker/build-push-action@v5
+        with:
+          push: true
+          tags: ${{ secrets.LOGIN }}/devops_lab03:v1.0.0  # Фиксированный тег
+          file: ./Dockerfile                             # Явно указан Dockerfile
+          context: .                                     # Контекст явно указан
+          cache-from: type=registry,ref=${{ secrets.LOGIN }}/devops_lab03:cache
+          cache-to: type=registry,ref=${{ secrets.LOGIN }}/devops_lab03:cache,mode=max
+          
